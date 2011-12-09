@@ -1,17 +1,17 @@
 /** * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
- *	agol.js
+ *	aagol.js
  *	Another Automaton Game Of Life
  *	Copyright (c) 2011 Schell Scivally Enterprise. All rights reserved.
  *
  *	@author	Schell Scivally
  *	@since	Thu Dec  8 17:49:46 PST 2011
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * **/
-var agol = mod({
-	name : 'agol',
+var aagol = mod({
+	name : 'aagol',
 	dependencies : [],
 	init : function (modules) {
 		/**
-		 *	Initializes the agol object
+		 *	Initializes the aagol object
 		 */
 		var states = {
 			/**
