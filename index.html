@@ -1,0 +1,43 @@
+<html>
+	<head>
+		<meta http-equiv="Content-type" content="text/html; charset=utf-8">
+		<title>agol</title>
+		<script src="submodules/mod/mod.js" type="text/javascript" charset="utf-8"></script>
+	</head>
+	<body id="index" onload="init()">
+		<script type="text/javascript" charset="utf-8">
+			var init = function () {
+				mod.useTagInjection = true;
+				mod.nocache = true;
+				mod({
+					name : 'agol_entrypoint',
+					dependencies : ['agol.js','submodules/mod/tests/assert.js'],
+					init : function (modules) {
+						window.agol = modules.agol;
+						
+						// validating states
+						var invalidState = '400000000';
+						assert.eq(agol.isValidState(invalidState), false, '4 is not a valid cell type');
+						invalidState = '0000000000';
+						assert.eq(agol.isValidState(invalidState), false, 'state cannot be 10 chars');
+						
+						var validState = 'X00000000';
+						assert.eq(agol.isValidState(validState), true, 'program can be in upper left');
+						
+						var invalidPre = 'X00000000';
+						assert.eq(agol.isValidPretransition(invalidPre), false, 'pretransition is only valid if program is in center');
+						var validPre = ''
+						
+						var state = '000\n000\n000'; // empty space
+						state = agol.packState(state);
+						assert.eq(state, '000000000', 'packState packs state');
+						assert.eq(agol.isValidTransition(state, state), false, 'empty space to empty space is not valid (is not a transition)');
+					},
+					callback : function () {
+						assert.stat();
+					}
+				})
+			}
+		</script>
+	</body>
+		
