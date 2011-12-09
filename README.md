@@ -12,14 +12,15 @@ meh.
 
 rules
 -----
-Users program lifeforms and watch them transition and transform. It is similar to Conway's game of life. It consists of a number of parts
-    1. The server (the world):
-        The world consists of a 2d grid of spaces in a given state. 
-        States:
-            0 Empty 
-            1 Block
-            2 Program
-            3 Resource 
+Users program lifeforms and watch them transition and transform. It is similar to Conway's game of life. It consists of a number of parts: 
+
+    1. The server (the world): 
+        The world consists of a 2d grid of spaces in a given state.  
+        States: 
+            0 Empty  
+            1 Block 
+            2 Program 
+            3 Resource  
         Rules:
             Programs can move into empty spaces
             Programs can switch places with blocks
@@ -28,7 +29,7 @@ Users program lifeforms and watch them transition and transform. It is similar t
             Unlike programs are resources (for your programs)
             Newer programs have iteration priority
             
-        The server would take care of ticking the world forward based on certain transitions the cells make. Life cells' transitions are programmable by the user.
+        The server takes care of ticking the world forward based on certain transitions the cells make. Life cells' transitions are programmable by the user.
         
     2. The client:
         Receives game state and displays it. Could possibly just receive the initial game state and transitions to cut down on data transmission.
