@@ -12,7 +12,7 @@ meh.
 
 rules
 -----
-Users program lifeforms and watch them transition and transform. It is similar to Conway's game of life. It consists of a number of parts: 
+Users write programs and watch them transform the state of the world. It is similar to Conway's game of life. It consists of a number of parts: 
 
     1. The server (the world): 
         The world consists of a 2d grid of spaces in a given state.  

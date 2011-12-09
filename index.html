@@ -8,7 +8,6 @@
 		<script type="text/javascript" charset="utf-8">
 			var init = function () {
 				mod.useTagInjection = true;
-				mod.nocache = true;
 				mod({
 					name : 'aagol_entrypoint',
 					dependencies : ['aagol.js','submodules/mod/tests/assert.js'],
@@ -16,6 +15,11 @@
 						window.aagol = modules.aagol;
 						
 						// validating states
+						var state = '000\n000\n000'; // empty space
+						state = aagol.packState(state);
+						assert.eq(state, '000000000', 'packState packs state');
+						assert.eq(aagol.isValidTransition(state, state), false, 'empty space to empty space is not valid (is not a transition)');
+						
 						var invalidState = '400000000';
 						assert.eq(aagol.isValidState(invalidState), false, '4 is not a valid cell type');
 						invalidState = '0000000000';
@@ -26,12 +30,43 @@
 						
 						var invalidPre = 'X00000000';
 						assert.eq(aagol.isValidPretransition(invalidPre), false, 'pretransition is only valid if program is in center');
-						var validPre = ''
 						
-						var state = '000\n000\n000'; // empty space
-						state = aagol.packState(state);
-						assert.eq(state, '000000000', 'packState packs state');
-						assert.eq(aagol.isValidTransition(state, state), false, 'empty space to empty space is not valid (is not a transition)');
+						var validPre = '3330X0020';
+						var invalidPost = '3300X3020';
+						assert.eq(aagol.isValidTransition(validPre, invalidPost), false, 'cannot move resource in transition');
+						
+						invalidPost = '3333X0020';
+						assert.eq(aagol.isValidTransition(validPre, invalidPost), false, 'cannot add resource');
+						
+						invalidPost = '3330X0022';
+						assert.eq(aagol.isValidTransition(validPre, invalidPost), false, 'cannot add like programs');
+						
+						validPre = '0000X0000';
+						var validPost = 'XXXX0XXXX';
+						assert.eq(aagol.isValidTransition(validPre, validPost), true, 'can move into empty space');
+						
+						validPre = '1110X0111';
+						invalidPost = 'X11X00111';
+						assert.eq(aagol.isValidTransition(validPre, invalidPost), false, 'cannot move into empty space or block');
+						
+						validPre = '0100X0000';
+						invalidPost = '0X0000000';
+						assert.eq(aagol.isValidTransition(validPre, invalidPost), false, 'cannot replace a block');
+						
+						validPost = '0X0010000';
+						assert.eq(aagol.isValidTransition(validPre, validPost), true, 'can switch places with a block');
+						
+						invalidPost = '000010000';
+						assert.eq(aagol.isValidTransition(validPre, invalidPost), false, 'cannot move block without switching places');
+						
+						validPre = '1110X0111';
+						invalidPost = '0X1110111';
+						assert.eq(aagol.isValidTransition(validPre, invalidPost), false, 'cannot move more than one block');
+						
+						invalidPost = '101X10111';
+						assert.eq(aagol.isValidTransition(validPre, invalidPost), false, 'program must switch places with moved block');
+						validPost = '1X1010111';
+						assert.eq(aagol.isValidTransition(validPre, validPost), true, 'program can switch places with block');
 					},
 					callback : function () {
 						assert.stat();

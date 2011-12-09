@@ -17,10 +17,11 @@ var aagol = mod({
 			/**
 			 *	Our cell states.
 			 */
-			0 : 'empty',
-			1 : 'block',
-			2 : 'program',
-			3 : 'resource'
+			'0' : 'empty',
+			'1' : 'block',
+			'2' : 'like program',
+			'3' : 'resource',
+			'X' : 'program'
 		};
 		var packState = function (expandedState) {
 			/**
@@ -82,7 +83,13 @@ var aagol = mod({
 				console.warn('invalid transition:',pre,post,'posttransition is invalid state');
 				return false;
 			}
+			if (!isValidPretransition(packedPre)) {
+				console.warn('invalid transition:',pre,'pretransition is not valid');
+			}
 			var getNdxsOf = function (char, string) {
+				/**
+				 *	Returns the indices of char in string
+				 */
 				var ndxs = [];
 				var n = string.length;
 				for (var i = n - 1; i >= 0; i--) {
@@ -94,33 +101,92 @@ var aagol = mod({
 			};
 			
 			var ndxsAreEq = function (ndx1, ndx2) {
-				ndx1.map(function (el,i,a) {
-					if (el !== i) {
+				/**
+				 *	Returns true if ndx1 is similar to ndx2, false if not
+				 */
+				var n = ndx1.length;
+				if (n !== ndx2.length) {
+					return false;
+				}
+				for (var i = n - 1; i >= 0; i--) {
+					if (ndx1[i] !== ndx2[i]) {
 						return false;
 					}
-				});
+				}
 				return true;
 			};
+			
+			var diff = function (string1, string2) {
+				/**
+				 *	Returns the indices that differ between two strings
+				 */
+				var ndxs = [];
+				var n = string1.length;
+				for (var i = n - 1; i >= 0; i--) {
+					if (string1[i] !== string2[i]) {
+						ndxs.push(i);
+					}
+				}
+				return ndxs;
+			};
+			
+			var isUntouched = function (char) {
+				var preNdxs = getNdxsOf(char, packedPre);
+				var postNdxs = getNdxsOf(char, packedPost);
+				if (!ndxsAreEq(preNdxs, postNdxs)) {
+					console.warn('invalid transition:',pre,post,'cannot add, delete or move '+states[char]);
+					return false;
+				}
+				return true;
+			};
+			
 			// check to see that resources are untouched
-			var preResNdxs = getNdxsOf('3', packedPre);
-			var postResNdxs = getNdxsOf('3', packedPost);
-			if (!ndxsAreEq(preResNdxs, postResNdxs)) {
-				console.warn('invalid transition:',pre,post,'cannot move resources');
+			if (!isUntouched('3')) {
 				return false;
 			}
-			// check to see that program has moved only into empty space
-			// or switched places with a block
+			// check to see that like programs are untouched
+			if (!isUntouched('2')) {
+				return false;
+			}
+			// check to see that block transitions are valid
+			var preBlkNdxs = getNdxsOf('1', packedPre);
+			var pstBlkNdxs = getNdxsOf('1', packedPost);
+			if (preBlkNdxs.length != pstBlkNdxs.length) {
+				// a block has been added or deleted
+				console.warn('invalid transition:',pre,post,'cannot add, delete or replace a block');
+				return false;
+			}
+			if (!ndxsAreEq(preBlkNdxs, pstBlkNdxs)) {
+				// a block has moved
+				var preProgNdxs = getNdxsOf('X', packedPre);
+				var postProgNdxs = getNdxsOf('X', packedPost);
+				if (preProgNdxs.length != postProgNdxs) {
+					console.warn('invalid transition:',pre,post,'cannot add, delete or replace program and switch places with a block');
+					return false;
+				}
+				
+				var diffNdxs = diff(packedPre, packedPost);
+				if (diffNdxs.length > 2) {
+					// more than one block has moved
+					console.warn('invalid transition:',pre,post,'a program cannot move more than one block');
+					return false;
+				}
+			}
 			
 			return true;
 		};
 		
+		var createStateEditor = function () {
+			
+		};
 		
 		
 		return {
 			packState : packState,
 			isValidState : isValidState,
 			isValidPretransition : isValidPretransition,
-			isValidTransition : isValidTransition
+			isValidTransition : isValidTransition,
+			createStateEditor : createStateEditor
 		};
 	}
 });
