@@ -67,9 +67,14 @@
 						assert.eq(aagol.isValidTransition(validPre, invalidPost), false, 'program must switch places with moved block');
 						validPost = '1X1010111';
 						assert.eq(aagol.isValidTransition(validPre, validPost), true, 'program can switch places with block');
+						
+						validPre = '0000X0111';
+						validPost = ''
 					},
 					callback : function () {
 						assert.stat();
+						
+						document.body.appendChild(aagol.createProgramEditor());
 					}
 				})
 			}
