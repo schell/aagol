@@ -37,7 +37,7 @@ var aagol = mod({
 		};
 		
 		var logs = [];
-		var log = function () {
+		var warn = function () {
 			console.warn(arguments);
 			logs.push(Array.prototype.slice.call(arguments));
 		};
@@ -58,7 +58,7 @@ var aagol = mod({
 			if (match && match.length == 1 && match[0] == state) {
 				return true;
 			}
-			log('invalid state:',state,'state can only characters 0-3 or X and must be 9 characters long');
+			warn('invalid state:',state,'state can only characters 0-3 or X and must be 9 characters long');
 			return false;
 		};
 		
@@ -68,11 +68,11 @@ var aagol = mod({
 			 */
 			var packed = packState(state);
 			if (!isValidState(packed)) {
-				log('invalid pretransition:',state,'(is invalid state)');
+				warn('invalid pretransition:',state,'(is invalid state)');
 				return false;
 			}
 			if (packed[4] !== 'X') {
-				log('invalid pretransition:',state,'(program is not in center of state)');
+				warn('invalid pretransition:',state,'(program is not in center of state)');
 				return false;
 			}
 			return true;
@@ -85,19 +85,19 @@ var aagol = mod({
 			packedPre = packState(pre);
 			packedPost = packState(post);
 			if (packedPre == packedPost) {
-				log('invalid transition:',pre,post,'no transition occurs');
+				warn('invalid transition:',pre,post,'no transition occurs');
 				return false;
 			}
 			if (!isValidState(packedPre)) {
-				log('invalid transition:',pre,post,'pretransition is invalid state');
+				warn('invalid transition:',pre,post,'pretransition is invalid state');
 				return false;
 			}
 			if (!isValidState(packedPost)) {
-				log('invalid transition:',pre,post,'posttransition is invalid state');
+				warn('invalid transition:',pre,post,'posttransition is invalid state');
 				return false;
 			}
 			if (!isValidPretransition(packedPre)) {
-				log('invalid transition:',pre,'pretransition is not valid');
+				warn('invalid transition:',pre,'pretransition is not valid');
 			}
 			var getNdxsOf = function (char, string) {
 				/**
@@ -147,7 +147,7 @@ var aagol = mod({
 				var preNdxs = getNdxsOf(char, packedPre);
 				var postNdxs = getNdxsOf(char, packedPost);
 				if (!ndxsAreEq(preNdxs, postNdxs)) {
-					log('invalid transition:',pre,post,'cannot add, delete or move '+states[char]);
+					warn('invalid transition:',pre,post,'cannot add, delete or move '+states[char]);
 					return false;
 				}
 				return true;
@@ -166,7 +166,7 @@ var aagol = mod({
 			var pstBlkNdxs = getNdxsOf('1', packedPost);
 			if (preBlkNdxs.length != pstBlkNdxs.length) {
 				// a block has been added or deleted
-				log('invalid transition:',pre,post,'cannot add, delete or replace a block');
+				warn('invalid transition:',pre,post,'cannot add, delete or replace a block');
 				return false;
 			}
 			if (!ndxsAreEq(preBlkNdxs, pstBlkNdxs)) {
@@ -174,16 +174,39 @@ var aagol = mod({
 				var preProgNdxs = getNdxsOf('X', packedPre);
 				var postProgNdxs = getNdxsOf('X', packedPost);
 				if (preProgNdxs.length != postProgNdxs.length) {
-					log('invalid transition:',pre,post,'cannot add, delete or replace program and switch places with a block');
+					warn('invalid transition:',pre,post,'cannot add, delete or replace program and switch places with a block');
 					return false;
 				}
 				
 				var diffNdxs = diff(packedPre, packedPost);
 				if (diffNdxs.length > 2) {
 					// more than one block has moved
-					log('invalid transition:',pre,post,'a program cannot move more than one block');
+					warn('invalid transition:',pre,post,'a program cannot move more than one block');
 					return false;
 				}
+			}
+			
+			return true;
+		};
+		
+		var isValidProgram = function (program) {
+			var invalidTransitions = 0;
+			var regex = /^[0-3|X]{9}:[0-3|X]{9}$/;
+			var validatedTransitions = program.split(' ').filter(function (transition,ndx,a) {
+				return transition !== '' && transition !== '\n';
+			}).map(function (transition,ndx,a) {
+				var pair = transition.split(':');
+				if (!isValidTransition(pair[0], pair[1])) {
+					warn('invalid program:',program,transition,ndx,'is invalid transition');
+					invalidTransitions++;
+					return false;
+				}
+				return true;
+			});
+			
+			if (invalidTransitions) {
+				warn('invalid program:',program,invalidTransitions,'invalid transition(s)');
+				return false;
 			}
 			
 			return true;
@@ -204,22 +227,24 @@ var aagol = mod({
 			var transitionSet = createSet('transition editor');
 			editor.appendChild(transitionSet);
 			
-			var areaCSS = 'width:3.5em; height:5em; resize:none;';
+			var areaCSS = "overflow:hidden; width:2em; height:4em; resize:none; font-family: 'Inconsolata', sans-serif; font-size:1em;";
 			
 			var truncateOnKeyDown = function (e) {
-				e.srcElement.value = e.srcElement.value.substring(0, 9);
+				e.srcElement.value = e.srcElement.value.substr(0, 9);
 			};
 			
 			var preArea = document.createElement('textArea');
 			preArea.id = 'pre_editor';
 			preArea.style.cssText = areaCSS;
 			preArea.onkeydown = truncateOnKeyDown;
+			preArea.value = '0000X0000';
 			transitionSet.appendChild(preArea);
 			
 			var postArea = document.createElement('textArea');
 			postArea.id = 'post_editor';
 			postArea.style.cssText = areaCSS;
 			postArea.onkeydown = truncateOnKeyDown;
+			postArea.value = 'XXXX0XXXX';
 			transitionSet.appendChild(postArea);
 			
 			var progSet = createSet('program editor');
@@ -227,16 +252,13 @@ var aagol = mod({
 			
 			var progArea = document.createElement('textArea');
 			progArea.id = 'prog_editor';
-			progArea.style.cssText = 'width:18em; padding:0.5em; float:right;';
+			progArea.style.cssText = "margin:auto; font-family: 'Inconsolata', sans-serif; font-size:1em; width:12em; height:18em;";
 			progSet.appendChild(progArea);
-			
-			var br = document.createElement('br');
-			transitionSet.appendChild(br);
 			
 			var addButton = document.createElement('input');
 			addButton.type = 'submit';
+			addButton.style.cssText = 'height:5em;';
 			addButton.value = 'add';
-			addButton.disabled = true;
 			transitionSet.appendChild(addButton);
 			
 			var output = createSet('console');
@@ -301,19 +323,24 @@ var aagol = mod({
 			
 			preArea.onchange = testChange;
 			postArea.onchange = testChange;
+			progArea.onchange = function () {
+				checkProgram(progArea.value);
+			};
 			
-			var pgmDefSet = createSet('program defintion');
-			editor.appendChild(pgmDefSet);
-			var pgmStates = document.createElement('div');
-			pgmDefSet.appendChild(pgmStates);
+			var checkProgram = function (program) {
+				var isValid = isValidProgram(program);
+				changeOutput(isValid);
+				return isValid;
+			};
 			
-			var states = 0;
 			var addTransition = function (pre, post) {
-				var div = document.createElement('div');
-				div.id = 'state_'+(states++).toString();
-				div.style.cssText = 'background-color:#AFAFAF; padding:0.5em; float:left;';
-				div.innerHTML = pre + ' ' + post;
-				pgmStates.appendChild(div);
+				var transition = pre+':'+post+' ';
+				var newProgram = progArea.value + transition;
+				logs = [];
+				var isValid = checkProgram(newProgram);
+				if (isValid) {
+					progArea.value = newProgram;
+				}
 			};
 			
 			addButton.onclick = function () {
@@ -332,6 +359,7 @@ var aagol = mod({
 			isValidState : isValidState,
 			isValidPretransition : isValidPretransition,
 			isValidTransition : isValidTransition,
+			isValidProgram : isValidProgram,
 			createProgramEditor : createProgramEditor
 		};
 	}

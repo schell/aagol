@@ -16,10 +16,10 @@
 		</script>
 		<meta http-equiv="Content-type" content="text/html; charset=utf-8">
 		<title>aagol</title>
-		<script src="submodules/mod/mod.js" type="text/javascript" charset="utf-8"></script>
+		<script src="http://schell.github.com/mod/mod.js" type="text/javascript" charset="utf-8"></script>
 		<style type="text/css" media="screen">
 			body {
-				font-family: 'Inconsolata', sans-serif;
+				font-family: 'Inconsolata', sans-serif; font-size:1em;
 			}
 		</style>
 	</head>
@@ -29,7 +29,7 @@
 				mod.useTagInjection = true;
 				mod({
 					name : 'aagol_entrypoint',
-					dependencies : ['aagol.js','submodules/mod/tests/assert.js'],
+					dependencies : ['aagol.js','http://schell.github.com/mod/tests/assert.js'],
 					init : function (modules) {
 						window.aagol = modules.aagol;
 						
@@ -90,6 +90,13 @@
 						validPre = '0000X0111';
 						validPost = '0000101X1';
 						assert.eq(aagol.isValidTransition(validPre, validPost), true, 'program can switch places with block');
+						
+						// valid programs
+						var validProgram = '0000X0000:XXXX0XXXX 0000X0111:0000101X1';
+						assert.eq(aagol.isValidProgram(validProgram), true, 'can validate program');
+						
+						var invalidProgram = '5000X0000:XXXX0XXXX 0000X0111:0000101X1';
+						assert.eq(aagol.isValidProgram(invalidProgram), false, 'can invalidate program');
 					},
 					callback : function () {
 						assert.stat();
