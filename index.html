@@ -1,8 +1,27 @@
 <html>
 	<head>
+		<script type="text/javascript">
+			WebFontConfig = {
+				google: { families: [ 'Inconsolata::latin' ] }
+			};
+			(function() {
+				var wf = document.createElement('script');
+				wf.src = ('https:' == document.location.protocol ? 'https' : 'http') +
+				'://ajax.googleapis.com/ajax/libs/webfont/1/webfont.js';
+				wf.type = 'text/javascript';
+				wf.async = 'true';
+				var s = document.getElementsByTagName('script')[0];
+				s.parentNode.insertBefore(wf, s);
+			})(); 
+		</script>
 		<meta http-equiv="Content-type" content="text/html; charset=utf-8">
 		<title>aagol</title>
 		<script src="submodules/mod/mod.js" type="text/javascript" charset="utf-8"></script>
+		<style type="text/css" media="screen">
+			body {
+				font-family: 'Inconsolata', sans-serif;
+			}
+		</style>
 	</head>
 	<body id="index" onload="init()">
 		<script type="text/javascript" charset="utf-8">
@@ -69,7 +88,8 @@
 						assert.eq(aagol.isValidTransition(validPre, validPost), true, 'program can switch places with block');
 						
 						validPre = '0000X0111';
-						validPost = ''
+						validPost = '0000101X1';
+						assert.eq(aagol.isValidTransition(validPre, validPost), true, 'program can switch places with block');
 					},
 					callback : function () {
 						assert.stat();

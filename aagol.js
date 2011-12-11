@@ -173,7 +173,7 @@ var aagol = mod({
 				// a block has moved
 				var preProgNdxs = getNdxsOf('X', packedPre);
 				var postProgNdxs = getNdxsOf('X', packedPost);
-				if (preProgNdxs.length != postProgNdxs) {
+				if (preProgNdxs.length != postProgNdxs.length) {
 					log('invalid transition:',pre,post,'cannot add, delete or replace program and switch places with a block');
 					return false;
 				}
@@ -190,41 +190,56 @@ var aagol = mod({
 		};
 		
 		var createProgramEditor = function () {
-			var editor = document.createElement('fieldset');
-			editor.id = 'stateEditor';
+			var createSet = function (innerHTML) {
+				var set = document.createElement('fieldset');
+
+				var legend = document.createElement('legend');
+				legend.innerHTML = innerHTML;
+				set.appendChild(legend);
+				return set;
+			}
+			var editor = createSet('aagol program editor');
+			editor.style.cssText = 'float:left;';
 			
-			var title = document.createElement('legend');
-			title.id = 'stateEditor_title';
-			title.innerHTML = 'aagol program editor';
-			editor.appendChild(title);
+			var transitionSet = createSet('transition editor');
+			editor.appendChild(transitionSet);
 			
-			var areaCSS = 'width:3.5em; height:5em; resize:none; padding:0.5em;';
+			var areaCSS = 'width:3.5em; height:5em; resize:none;';
+			
+			var truncateOnKeyDown = function (e) {
+				e.srcElement.value = e.srcElement.value.substring(0, 9);
+			};
 			
 			var preArea = document.createElement('textArea');
 			preArea.id = 'pre_editor';
 			preArea.style.cssText = areaCSS;
-			editor.appendChild(preArea);
+			preArea.onkeydown = truncateOnKeyDown;
+			transitionSet.appendChild(preArea);
 			
 			var postArea = document.createElement('textArea');
 			postArea.id = 'post_editor';
 			postArea.style.cssText = areaCSS;
-			editor.appendChild(postArea);
+			postArea.onkeydown = truncateOnKeyDown;
+			transitionSet.appendChild(postArea);
+			
+			var progSet = createSet('program editor');
+			editor.appendChild(progSet);
+			
+			var progArea = document.createElement('textArea');
+			progArea.id = 'prog_editor';
+			progArea.style.cssText = 'width:18em; padding:0.5em; float:right;';
+			progSet.appendChild(progArea);
 			
 			var br = document.createElement('br');
-			editor.appendChild(br);
+			transitionSet.appendChild(br);
 			
 			var addButton = document.createElement('input');
 			addButton.type = 'submit';
 			addButton.value = 'add';
 			addButton.disabled = true;
-			editor.appendChild(addButton);
+			transitionSet.appendChild(addButton);
 			
-			var output = document.createElement('fieldset');
-			output.id = 'editor_output';
-			
-			var outputTitle = document.createElement('legend');
-			outputTitle.innerHTML = 'console';
-			output.appendChild(outputTitle);
+			var output = createSet('console');
 			editor.appendChild(output);
 			
 			var outputValue = document.createElement('div');
@@ -287,11 +302,7 @@ var aagol = mod({
 			preArea.onchange = testChange;
 			postArea.onchange = testChange;
 			
-			var pgmDefSet = document.createElement('fieldset');
-			editor.appendChild(pgmDefSet);
-			var pgmTitle = document.createElement('legend');
-			pgmTitle.innerHTML = 'program defintion';
-			pgmDefSet.appendChild(pgmTitle);
+			var pgmDefSet = createSet('program defintion');
 			editor.appendChild(pgmDefSet);
 			var pgmStates = document.createElement('div');
 			pgmDefSet.appendChild(pgmStates);
