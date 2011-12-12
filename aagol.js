@@ -212,143 +212,209 @@ var aagol = mod({
 			return true;
 		};
 		
-		var createProgramEditor = function () {
+		var gui = (function createGuiTools () {
+			/**
+			 *	Creates an object of gui tool constructors.
+			 */
 			var createSet = function (innerHTML) {
+				/**
+				 *	Creates a labled html fieldset.
+				 */
 				var set = document.createElement('fieldset');
 
 				var legend = document.createElement('legend');
 				legend.innerHTML = innerHTML;
 				set.appendChild(legend);
 				return set;
-			}
-			var editor = createSet('aagol program editor');
-			editor.style.cssText = 'float:left;';
-			
-			var transitionSet = createSet('transition editor');
-			editor.appendChild(transitionSet);
-			
-			var areaCSS = "overflow:hidden; width:2em; height:4em; resize:none; font-family: 'Inconsolata', sans-serif; font-size:1em;";
-			
-			var truncateOnKeyDown = function (e) {
-				e.srcElement.value = e.srcElement.value.substr(0, 9);
 			};
 			
-			var preArea = document.createElement('textArea');
-			preArea.id = 'pre_editor';
-			preArea.style.cssText = areaCSS;
-			preArea.onkeydown = truncateOnKeyDown;
-			preArea.value = '0000X0000';
-			transitionSet.appendChild(preArea);
-			
-			var postArea = document.createElement('textArea');
-			postArea.id = 'post_editor';
-			postArea.style.cssText = areaCSS;
-			postArea.onkeydown = truncateOnKeyDown;
-			postArea.value = 'XXXX0XXXX';
-			transitionSet.appendChild(postArea);
-			
-			var progSet = createSet('program editor');
-			editor.appendChild(progSet);
-			
-			var progArea = document.createElement('textArea');
-			progArea.id = 'prog_editor';
-			progArea.style.cssText = "margin:auto; font-family: 'Inconsolata', sans-serif; font-size:1em; width:12em; height:18em;";
-			progSet.appendChild(progArea);
-			
-			var addButton = document.createElement('input');
-			addButton.type = 'submit';
-			addButton.style.cssText = 'height:5em;';
-			addButton.value = 'add';
-			transitionSet.appendChild(addButton);
-			
-			var output = createSet('console');
-			editor.appendChild(output);
-			
-			var outputValue = document.createElement('div');
-			outputValue.id = 'editor_output_value';
-			output.appendChild(outputValue);
-			
-			var changeOutput = function (isValid) {
-				var msg = '';
-			
-				if (!isValid) {
-					outputValue.style.cssText = 'color:red;';
-					var n = logs.length;
-					for (var i = n - 1; i >= 0; i--) {
-						var args = logs[i];
-						for (var j = 0; j < args.length; j++) {
-							msg += args[j].toString() + ' - ';
+			var createProgramEditor = function () {
+				/**
+				 *	Creates a program editor in html.
+				 */
+				var editor = createSet('editor');
+				editor.style.cssText = 'float:left;';
+
+				var transitionSet = createSet('transition editor');
+				editor.appendChild(transitionSet);
+
+				var areaCSS = "overflow:hidden; width:2em; height:4em; resize:none; font-family: 'Inconsolata', sans-serif; font-size:1em;";
+
+				var truncateOnKeyDown = function (e) {
+					e.srcElement.value = e.srcElement.value.substr(0, 9);
+				};
+
+				var preArea = document.createElement('textArea');
+				preArea.id = 'pre_editor';
+				preArea.style.cssText = areaCSS;
+				preArea.onkeydown = truncateOnKeyDown;
+				preArea.value = '0000X0000';
+				transitionSet.appendChild(preArea);
+
+				var postArea = document.createElement('textArea');
+				postArea.id = 'post_editor';
+				postArea.style.cssText = areaCSS;
+				postArea.onkeydown = truncateOnKeyDown;
+				postArea.value = 'XXXX0XXXX';
+				transitionSet.appendChild(postArea);
+
+				var progSet = createSet('program editor');
+				editor.appendChild(progSet);
+
+				var progArea = document.createElement('textArea');
+				progArea.id = 'prog_editor';
+				progArea.style.cssText = "margin:auto; font-family: 'Inconsolata', sans-serif; font-size:1em; width:12em; height:18em;";
+				progSet.appendChild(progArea);
+
+				var addButton = document.createElement('input');
+				addButton.type = 'submit';
+				addButton.style.cssText = 'height:5em;';
+				addButton.value = 'add';
+				transitionSet.appendChild(addButton);
+
+				var output = createSet('console');
+				editor.appendChild(output);
+
+				var outputValue = document.createElement('div');
+				outputValue.id = 'editor_output_value';
+				output.appendChild(outputValue);
+
+				var changeOutput = function (isValid) {
+					var msg = '';
+
+					if (!isValid) {
+						outputValue.style.cssText = 'color:red;';
+						var n = logs.length;
+						for (var i = n - 1; i >= 0; i--) {
+							var args = logs[i];
+							for (var j = 0; j < args.length; j++) {
+								msg += args[j].toString() + ' - ';
+							}
+							msg += '<br/>';
 						}
-						msg += '<br/>';
+					} else {
+						outputValue.style.cssText = 'color:green;';
+						msg = 'okay!';
 					}
-				} else {
-					outputValue.style.cssText = 'color:green;';
-					msg = 'okay!';
+
+					document.getElementById('editor_output_value').innerHTML = msg;
 				}
-			
-				document.getElementById('editor_output_value').innerHTML = msg;
-			}
-			
-			var prechange = function () {
-				preArea.value = packState(preArea.value.substring(0, 9));
-				logs = [];
-				var isValid = isValidPretransition(preArea.value);
-				var msg = '';
-			
-				changeOutput(isValid);
-				return isValid;
-			};
-			
-			var postchange = function () {
-				postArea.value = packState(postArea.value.substring(0, 9));
-				logs = [];
-				var isValid = isValidState(postArea.value);
-				changeOutput(isValid);
-				return isValid;
-			};
-			
-			var testChange = function () {
-				addButton.disabled = true;
-				if (preArea.value != '' && prechange()) {
-					if (postArea.value != '' && postchange()) {
-						logs = [];
-						var isValid = isValidTransition(preArea.value, postArea.value);
-						changeOutput(isValid);
-						if (isValid) {
-							addButton.disabled = false;
+
+				var prechange = function () {
+					preArea.value = packState(preArea.value.substring(0, 9));
+					logs = [];
+					var isValid = isValidPretransition(preArea.value);
+					var msg = '';
+
+					changeOutput(isValid);
+					return isValid;
+				};
+
+				var postchange = function () {
+					postArea.value = packState(postArea.value.substring(0, 9));
+					logs = [];
+					var isValid = isValidState(postArea.value);
+					changeOutput(isValid);
+					return isValid;
+				};
+
+				var testChange = function () {
+					addButton.disabled = true;
+					if (preArea.value != '' && prechange()) {
+						if (postArea.value != '' && postchange()) {
+							logs = [];
+							var isValid = isValidTransition(preArea.value, postArea.value);
+							changeOutput(isValid);
+							if (isValid) {
+								addButton.disabled = false;
+							}
 						}
 					}
+				};
+
+				preArea.onchange = testChange;
+				postArea.onchange = testChange;
+				progArea.onchange = function () {
+					checkProgram(progArea.value);
+				};
+
+				var checkProgram = function (program) {
+					var isValid = isValidProgram(program);
+					changeOutput(isValid);
+					return isValid;
+				};
+
+				var addTransition = function (pre, post) {
+					var transition = pre+':'+post+' ';
+					var newProgram = progArea.value + transition;
+					logs = [];
+					var isValid = checkProgram(newProgram);
+					if (isValid) {
+						progArea.value = newProgram;
+					}
+				};
+
+				addButton.onclick = function () {
+					addTransition(preArea.value, postArea.value);
+				};
+
+				return editor;
+			};
+			
+			var createMap = function (w, h) {
+				/**
+				 *	Creates a 2d array of w x h.
+				 */
+				var map = [];
+				for (var i = 0; i < w; i++) {
+					var col = [];
+					for (var j = 0; j < h; j++) {
+						col.push(0);
+					}
+					map.push(col);
 				}
+				return map;
 			};
 			
-			preArea.onchange = testChange;
-			postArea.onchange = testChange;
-			progArea.onchange = function () {
-				checkProgram(progArea.value);
+			var createSimulator = function () {
+				/**
+				 *	Creates a simulation area.
+				 */
+				var sim = createSet('simulator');
+				sim.style.cssText = 'width:auto; height:auto;';
+				
+				var canvas = document.createElement('canvas');
+				canvas.id = 'aagol_simulator_canvas';
+				canvas.style.cssText = 'width:500px; height:500px;';
+				sim.canvas = canvas;
+				sim.appendChild(canvas);
+				
+				var ctx = canvas.getContext('2d');
+				sim.ctx = ctx;
+				
+				var render = sim.render = function () {
+					ctx.save();
+					ctx.globalAlpha = 1.0;
+					ctx.fillStyle = "rgba(127,127,127,1.0)";
+					ctx.strokeStyle = "rgb(0,0,0)";
+					ctx.fillRect(0, 0, 640, 480);
+					ctx.restore();
+				};
+				
+				aagol.simulator = sim;
+				
+				render();
+				
+				return sim;
 			};
 			
-			var checkProgram = function (program) {
-				var isValid = isValidProgram(program);
-				changeOutput(isValid);
-				return isValid;
+			return {
+				createSet : createSet,
+				createProgramEditor : createProgramEditor,
+				createSimulator : createSimulator,
+				createMap : createMap
 			};
-			
-			var addTransition = function (pre, post) {
-				var transition = pre+':'+post+' ';
-				var newProgram = progArea.value + transition;
-				logs = [];
-				var isValid = checkProgram(newProgram);
-				if (isValid) {
-					progArea.value = newProgram;
-				}
-			};
-			
-			addButton.onclick = function () {
-				addTransition(preArea.value, postArea.value);
-			};
-			
-			return editor;
-		};
+		}());
 		
 		
 		return {
@@ -360,7 +426,7 @@ var aagol = mod({
 			isValidPretransition : isValidPretransition,
 			isValidTransition : isValidTransition,
 			isValidProgram : isValidProgram,
-			createProgramEditor : createProgramEditor
+			gui : gui
 		};
 	}
 });

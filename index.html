@@ -101,7 +101,10 @@
 					callback : function () {
 						assert.stat();
 						
-						document.body.appendChild(aagol.createProgramEditor());
+						var holder = aagol.gui.createSet('aagol');
+						document.body.appendChild(holder);
+						holder.appendChild(aagol.gui.createProgramEditor());
+						holder.appendChild(aagol.gui.createSimulator());
 					}
 				})
 			}
