@@ -21,7 +21,8 @@ var aagol = mod({
 			'1' : 'block',
 			'2' : 'like program',
 			'3' : 'resource',
-			'X' : 'program'
+			'X' : 'program',
+			'.' : 'wildcard'
 		};
 		
 		var packState = function (expandedState) {
@@ -53,12 +54,12 @@ var aagol = mod({
 			 *	Checks a state for validity.
 			 */
 			state = packState(state);
-			var regex = /^[0-3|X]{9}$/;
+			var regex = /^[0-3|X|\.]{9}$/;
 			var match = state.match(regex);
 			if (match && match.length == 1 && match[0] == state) {
 				return true;
 			}
-			warn('invalid state:',state,'state can only characters 0-3 or X and must be 9 characters long');
+			warn('invalid state:',state,'state can only characters 0-3, X or "." and must be 9 characters long');
 			return false;
 		};
 		
@@ -161,6 +162,11 @@ var aagol = mod({
 			if (!isUntouched('2')) {
 				return false;
 			}
+			// check to see that wildcards are untouched
+			if (!isUntouched('.')) {
+				return false;
+			}
+			
 			// check to see that block transitions are valid
 			var preBlkNdxs = getNdxsOf('1', packedPre);
 			var pstBlkNdxs = getNdxsOf('1', packedPost);
@@ -191,7 +197,7 @@ var aagol = mod({
 		
 		var isValidProgram = function (program) {
 			var invalidTransitions = 0;
-			var regex = /^[0-3|X]{9}:[0-3|X]{9}$/;
+			var regex = /^[0-3|X|\.]{9}:[0-3|X|\.]{9}$/;
 			var validatedTransitions = program.split(' ').filter(function (transition,ndx,a) {
 				return transition !== '' && transition !== '\n';
 			}).map(function (transition,ndx,a) {
@@ -484,8 +490,6 @@ var aagol = mod({
 						}
 						path.push(point);
 					}
-					
-					console.log(path.length);
 					
 					var drawPath = function (p) {
 						if (p.length > 2) {
