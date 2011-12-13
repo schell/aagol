@@ -8,7 +8,7 @@
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * **/
 var aagol = mod({
 	name : 'aagol',
-	dependencies : [],
+	dependencies : ['http://crypto-js.googlecode.com/files/2.3.0-crypto-md5.js'],
 	init : function (modules) {
 		/**
 		 *	Initializes the aagol object
@@ -298,7 +298,7 @@ var aagol = mod({
 					}
 
 					document.getElementById('editor_output_value').innerHTML = msg;
-				}
+				};
 
 				var prechange = function () {
 					preArea.value = packState(preArea.value.substring(0, 9));
@@ -341,6 +341,19 @@ var aagol = mod({
 				var checkProgram = function (program) {
 					var isValid = isValidProgram(program);
 					changeOutput(isValid);
+					if (isValid) {
+						var sim = aagol.simulator;
+						if (sim) {
+							var img = document.getElementById('aagol_simulator_program_img');
+							if (img) {
+								aagol.simulator.removeChild(img);
+							}
+							img = createMD5HashPicture(Crypto.MD5(program));
+							img.id = 'aagol_simulator_program_img';
+							img.cssText = 'float:right;';
+							sim.appendChild(img);
+						}
+					}
 					return isValid;
 				};
 
@@ -385,7 +398,7 @@ var aagol = mod({
 				
 				var canvas = document.createElement('canvas');
 				canvas.id = 'aagol_simulator_canvas';
-				canvas.style.cssText = 'width:500px; height:500px;';
+				canvas.style.cssText = 'width:500px; height:500px; float:left;';
 				sim.canvas = canvas;
 				sim.appendChild(canvas);
 				
@@ -408,11 +421,161 @@ var aagol = mod({
 				return sim;
 			};
 			
+			var createMD5HashPicture = function (hash, w, h) {
+				hash = hash || Crypto.MD5('asdf'); // 912ec803b2ce49e4a541068d495ab570
+				w = w || 100;
+				h = h || 100;
+				/**
+				 *	Takes an md5 hash and generates a picture symbol representation.
+				 */
+				var cvs = document.createElement('canvas');
+				cvs.width = w;
+				cvs.height = h;
+				var ctx = cvs.getContext('2d');
+				
+				var getHexAt = function (s, ndx, width) {
+					return Number('0x'+s.substr(ndx, width));
+				};
+				
+				var getRGBAt = function (s, ndx) {
+					var r = getHexAt(s, ndx, 2);
+					var g = getHexAt(s, ndx+2, 2);
+					var b = getHexAt(s, ndx+4, 2);
+					return 'rgb('+r+','+g+','+b+')';
+				};
+				
+				var getRGBAAt = function (s, ndx) {
+					var r = getHexAt(s, ndx, 2);
+					var g = getHexAt(s, ndx+2, 2);
+					var b = getHexAt(s, ndx+4, 2);
+					var a = getHexAt(s, ndx+6, 2)/255.0;
+					return 'rgba('+r+','+g+','+b+','+a+')';
+				};
+				
+				var bkgColor = getRGBAt(hash, 24);
+				ctx.fillStyle = bkgColor;
+				ctx.fillRect(0, 0, w, h);
+				
+				var deposits = 1;
+				
+				var deposit = function (s) {
+					ctx.save();
+					if (s.length < 8) {
+						return;
+					}
+					var seed = 0;
+					var n = 0;
+					while (n < 3 || n%2 != 0) {
+						n = getHexAt(s, seed++, 1);
+					}
+					var path = [];
+					for (var i = 0; i < n; i++) {
+						var x = (getHexAt(s, i%s.length, 1)/16)*(w/2+1);
+						var y = (getHexAt(s, (i+1)%s.length, 1)/16)*(h/2+1);
+						var point = {
+							x:x,
+							y:y
+						};
+						if (x != 0 && y != 0 && getHexAt(s, (i+3)%s.length) > 8 && path.length < 4) {
+							point.cpx1 = Math.floor((getHexAt(s, i+4%s.length, 1)/16)*(w/2));
+							point.cpy1 = Math.floor((getHexAt(s, (i+5)%s.length, 1)/16)*(h/2));
+							point.cpx2 = Math.floor((getHexAt(s, i+6%s.length, 1)/16)*(w/2));
+							point.cpy2 = Math.floor((getHexAt(s, (i+7)%s.length, 1)/16)*(h/2));
+						}
+						path.push(point);
+					}
+					
+					console.log(path.length);
+					
+					var drawPath = function (p) {
+						if (p.length > 2) {
+							ctx.moveTo(p[0].x, p[0].y);
+							for (var i = 1; i < p.length; i++) {
+								if (p[i].cpx1) {
+									ctx.bezierCurveTo(p[i].cpx1, p[i].cpy1, p[i].cpx2, p[i].cpy2, p[i].x, p[i].y)
+								} else {
+									ctx.lineTo(p[i].x, p[i].y);
+								}
+							}
+							ctx.strokeStyle = getRGBAt(s, 4);
+							ctx.fillStyle = getRGBAt(s, 3);
+							ctx.fill();
+							ctx.stroke();
+						}
+					};
+					
+					var flip = function (component, about) {
+						var distance = about - component;
+						return about + distance;
+					};
+					
+					var flipPathHorizontal = function (path) {
+						var dx = Math.ceil(w/2);
+						return path.map(function (loc,ndx,a) {
+							var p = {
+								x : flip(loc.x, dx),
+								y : loc.y
+							};
+							if ('cpx1' in loc) {
+								p.cpx1 = flip(loc.cpx1, dx);
+								p.cpy1 = loc.cpy1;
+								p.cpx2 = flip(loc.cpx2, dx);
+								p.cpy2 = loc.cpy2;
+							}
+							return p;
+						});
+					};
+					
+					var flipPathVertical = function (path) {
+						var dy = Math.ceil(h/2);
+						return path.map(function (loc,ndx,a) {
+							var p = {
+								x : loc.x,
+								y : flip(loc.y, dy)
+							};
+							if ('cpx1' in loc) {
+								p.cpx1 = loc.cpx1;
+								p.cpy1 = flip(loc.cpy1, dy);
+								p.cpx2 = loc.cpx2;
+								p.cpy2 = flip(loc.cpy2, dy);;
+							}
+							return p;
+						});
+					};
+					
+					drawPath(path);
+					drawPath(flipPathHorizontal(path));
+					drawPath(flipPathVertical(path));
+					drawPath(flipPathHorizontal(flipPathVertical(path)));
+					
+					var cipher = function (string) {
+						return Array.prototype.slice.apply(string).map(function (char,ndx,a) {
+							var number = (Number('0x'+char) + 5)%16;
+							return number.toString(16);
+						}).join('');
+					};
+					
+					ctx.restore();
+					
+					if (--deposits) {
+						deposit(cipher(s));
+					}
+				};
+				
+				deposit(hash.substr(2));
+				
+				var data = cvs.toDataURL();
+				var img = new Image();
+				img.src = data;
+				return img;
+			};
+			
 			return {
 				createSet : createSet,
 				createProgramEditor : createProgramEditor,
 				createSimulator : createSimulator,
-				createMap : createMap
+				createMap : createMap,
+				createMD5HashPicture : createMD5HashPicture,
 			};
 		}());
 		
